@@ -1,6 +1,6 @@
 //This script is responsible for controlling a variety of motion control
 //systems, listening for voltages that correspond to button presses, and
-//metaphorically unlocking doors.
+//metaphorically unlocking doors. Its primary concern are elevator events
 //libraries
 #include <Servo.h>
 //this section reserved for painting eye servo

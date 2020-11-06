@@ -1,3 +1,5 @@
+//This script is responsible for listening for input voltages
+//and providing an exit from the elevator events
 //these are the input pins for the elevator buttons
 
 int button4pin = 4;
