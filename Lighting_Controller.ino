@@ -1,3 +1,8 @@
+//This script controls lighting animation in the elevator events
+//based on whether or not it receives a voltage from another 
+//mechanical system. There is no communication between systems
+//to coordinate the physical effects and the lighting effects
+//so we pretty much wing it based on time.
 int uvled = 11;
 int primarylight = 10;
 int throwswitch = 9;
