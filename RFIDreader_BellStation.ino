@@ -1,3 +1,5 @@
+//This script reads inputs from an RFID unit in a bellhop station
+//and is responsible for sending events back to a primary controller.
 char *RFIDstring = "velmontbell";
 int comm2eyespin = 5;
 
