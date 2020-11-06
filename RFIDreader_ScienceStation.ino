@@ -3,12 +3,12 @@ char *RFIDstringA = "velmontball";
 char *RFIDstringB = "velmontring";
 char *RFIDstringC = "velmontgold";
 
-//outputs
+//output pins
 int audioPin = 4;
-int lockcirc1 = 5;
-int lockcirc2 = 6;
+int lockmagnet1 = 5;
+int lockmagnet2 = 6;
 
-//inputs
+//input pins
 int codeswitch1 = 8;
 int codeswitch2 = 9;
 int codeswitch3 = 10;
@@ -19,13 +19,13 @@ int codeswitch2state = 0;
 int codeswitch3state = 0;
 
 //story solve states
-int code1solved = 0;
-int code2solved = 0;
-int code3solved = 0;
-int fullysolved = 0;
+bool code1solved = false;
+bool code2solved = false;
+bool code3solved = false;
+bool fullysolved = false;
 
 //audio playback state
-int audioplayed = 0;
+bool audioplayed = false;
 
 /**************************************************************************/
 /*! 
@@ -102,8 +102,8 @@ Adafruit_PN532 nfc(PN532_IRQ, PN532_RESET);
 void setup(void) {
   //set pinmode for outputs
   pinMode(audioPin, OUTPUT);
-  pinMode(lockcirc1, OUTPUT);
-  pinMode(lockcirc2, OUTPUT);
+  pinMode(lockmagnet1, OUTPUT);
+  pinMode(lockmagnet2, OUTPUT);
   //set pinmode for inputs
   pinMode(codeswitch1, INPUT);
   pinMode(codeswitch2, INPUT);
@@ -133,37 +133,54 @@ void setup(void) {
   Serial.println("Waiting for an ISO14443A Card ...");
 }
 
-
 void loop(void) {
   //set all the relays low so they don't trip
   digitalWrite(audioPin, LOW);
-  digitalWrite(lockcirc1, LOW);
-  digitalWrite(lockcirc2, LOW);
+  digitalWrite(lockmagnet1, LOW);
+  digitalWrite(lockmagnet2, LOW);
+  //start listening for voltages from the switches
   codeswitch1state = digitalRead(codeswitch1);
   codeswitch2state = digitalRead(codeswitch2);
   codeswitch3state = digitalRead(codeswitch3);
-//  Serial.println(codeswitch3state);
+  //Serial.println(codeswitch3state);
   //determine order of locks and whether they've been unlocked or not
   //code1 solution
-  if (codeswitch1state == HIGH && code1solved == 0) {
-    code1solved = 1;
+  //if the voltage on the first solution is high and I haven't been solved yet
+  if (codeswitch1state == HIGH && code1solved == false) {
+    //I set myself to solved
+    code1solved = true;
+    //I log that I have been unlocked
     Serial.println("lock 1 unlocked");
-    digitalWrite(lockcirc1, HIGH);
+    //I push voltage to the magnetic system
+    digitalWrite(lockmagnet1, HIGH);
+    //I wait for a second because mechanical failures are possible and I can't determine my own state
     delay(1000);
   }
   //code2 solution
-  if (codeswitch2state == HIGH && code1solved == 1) {
-    code2solved = 1;
+  //if the voltage on the second solution is high and the first lock was previously unlocked successfully
+  if (codeswitch2state == HIGH && code1solved == true) {
+    //I set myself to solved
+    code2solved = true;
+    //I log that I have been unlocked
     Serial.println("lock 2 unlocked");
-    digitalWrite(lockcirc2, HIGH);
+    //I push voltage to the magnetic system
+    digitalWrite(lockmagnet2, HIGH);
+    //I wait for five seconds because this mechanical system fails frequently and I can't determine my own state
     delay(5000);
   }
   //code3 solution
-  if (codeswitch3state == HIGH && code2solved == 1 && audioplayed == 0 && fullysolved == 1) {
-    code3solved = 1;
-    audioplayed = 1;
+  //if the voltage on the third solution is high and the RFID systems haven't been solved yet and the finale
+  //audio sequence hasn't been initiated
+  if (codeswitch3state == HIGH && code2solved == true && audioplayed == false && fullysolved == true) {
+    //I set myself to solved
+    code3solved = true;
+    //I set the audio state to true even though I haven't pushed voltage yet because I want to guard
+    audioplayed = true;
+    //I push a voltage to the pin
     digitalWrite(audioPin, HIGH);
+    //I wait for five seconds because it's async and the receiving card can't talk back
     delay(5000);
+    //I log that I'm unlocked
     Serial.println("lock 3 unlocked");
   }
 
@@ -204,10 +221,10 @@ void loop(void) {
         Serial.println("Sector 1 (Blocks 4..7) has been authenticated");
         uint8_t data[16];
 		
-        // If you want to write something to block 4 to test with, uncomment
-		// the following line and this text should be read back in a minute
+// If you want to write something to block 4 to test with, uncomment
+// the following line and this text should be read back in a minute
 //        memcpy(data, (const uint8_t[]){ 'v', 'e', 'l', 'm', 'o', 'n', 't', 'b', 'a', 'l', 'l', 0, 0, 0, 0, 0 }, sizeof data);
-//         success = nfc.mifareclassic_WriteDataBlock (4, data);
+//        success = nfc.mifareclassic_WriteDataBlock (4, data);
 
         // Try to read the contents of block 4
         success = nfc.mifareclassic_ReadDataBlock(4, data);
@@ -217,11 +234,11 @@ void loop(void) {
           // Data seems to have been read ... spit it out
           Serial.println("Reading Block 4:");
           nfc.PrintHexChar(data, 16);
-          //compare the data to the expected string
+          //compare the data to the expected string - this may not be the correct approach
           if (strcmp(data,RFIDstringA) == 0) {
             //if it matches, send a voltage to the relay to trigger winning audio
-            Serial.println("HOLY SHIT");
-            fullysolved = 1;
+            Serial.println("Some encoded card read");
+            fullysolved = true;
             delay(3000);
             //clear the data cache
             *data = 0;
