@@ -28,7 +28,7 @@ int lockedstate = 0;
 //these variables are the motioncontrol read values and pins
 int mocopin = A2;
 int mocostate = 0;
-int puzzleunlock = 0;
+bool puzzleunlock = 0=false;
 
 //pin mode declarations etc
 void setup() {
@@ -51,11 +51,11 @@ void setup() {
 void loop() {
 	mocostate = analogRead(mocopin);
 	//if I'm getting a voltage, set the puzzle state to ready
-	if (puzzleunlock == 0) {
+	if (puzzleunlock == false) {
 		digitalWrite(UVledpin,LOW);
 		digitalWrite(overheadledpin,HIGH);
 		if (mocostate > 1000) {
-			puzzleunlock = 1;
+			puzzleunlock = true;
 		} else {
 			digitalWrite(UVledpin,HIGH);
 			digitalWrite(overheadledpin,LOW);
