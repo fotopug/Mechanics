@@ -28,7 +28,7 @@ int lockedstate = 0;
 //these variables are the motioncontrol read values and pins
 int mocopin = A2;
 int mocostate = 0;
-bool puzzleunlock = 0=false;
+bool puzzleunlock = false;
 
 //pin mode declarations etc
 void setup() {
